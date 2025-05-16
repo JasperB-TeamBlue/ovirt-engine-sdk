@@ -27,7 +27,8 @@ import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.inject.Inject;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 
@@ -37,8 +38,6 @@ import org.apache.commons.io.FileUtils;
  * rest of the source.
  */
 public class PythonBuffer {
-    // Reference to the object used to generate names:
-    @Inject private PythonNames pythonNames;
 
     // The name of the file:
     private String fileName;
@@ -143,6 +142,108 @@ public class PythonBuffer {
 
         // Add the line to the list:
         lines.add(buffer.toString());
+    }
+
+    public void prepParameterLine(String line) {
+        String[] parts = line.split("::");
+        if (parts.length > 1) {
+            parts[0] = parts[0] + " \\n";
+        }
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i].strip();
+            part = replaceServiceMethodsXrefs(part);
+            part = replaceServiceXrefs(part);
+            part = replaceTypeAttributeXrefs(part);
+            part = replaceTypeXrefs(part);
+            addRawLine(part);
+        }
+    }
+
+    /**
+     * Replaces the xref:types-<type>-attributes-<attribute> with the corresponding pdoc link.
+     */
+    public String replaceTypeAttributeXrefs(String input) {
+        StringBuffer result = new StringBuffer();
+        Pattern pattern = Pattern.compile("xref:types-([^\\[]+)-attributes-([^\\]]+)\\[([^\\]]+)]");
+        Matcher match = pattern.matcher(input);
+        boolean found = false;
+        while (match.find()) {
+            found = true;
+            String typeName = match.group(1);
+            String attributeName = match.group(2);
+            String formattedRes = "`ovirtsdk4.types." + underscoretoUpperCase(typeName) + "." + attributeName + "`";
+            match.appendReplacement(result, formattedRes);
+        }
+        match.appendTail(result);
+        return found ? result.toString() : input;
+    }
+
+    /**
+     * Replaces the xref:services-<service>-methods-<method> with the corresponding pdoc link.
+     */
+    public String replaceServiceMethodsXrefs(String input) {
+        StringBuffer result = new StringBuffer();
+        Pattern pattern = Pattern.compile("xref:services-([^-\\]]+(?:-[^-\\]]+)*)-methods-([^-\\]]+)\\[([^\\]]+)]");
+        Matcher match = pattern.matcher(input);
+        boolean found = false;
+        while (match.find()) {
+            found = true;
+            String serviceName = match.group(1);
+            String methodName = match.group(2);
+            String formattedRes = "`" + underscoretoUpperCase(serviceName) + "Service" + "." + methodName + "`";
+            match.appendReplacement(result, formattedRes);
+        }
+        match.appendTail(result);
+        return found ? result.toString() : input;
+    }
+
+    /**
+     * Replaces the xref:services-<service> with the corresponding pdoc link.
+     */
+    public String replaceServiceXrefs(String input) {
+        StringBuffer result = new StringBuffer();
+        Pattern pattern = Pattern.compile("xref:services-([^\\[]+)\\[([^\\]]+)]");
+        Matcher match = pattern.matcher(input);
+        boolean found = false;
+        while (match.find()) {
+            found = true;
+            String serviceName = match.group(1);
+            String formattedRes = "`" + underscoretoUpperCase(serviceName) + "Service`";
+            match.appendReplacement(result, formattedRes);
+        }
+        match.appendTail(result);
+        return found ? result.toString() : input;
+    }
+
+    /**
+     * Replaces the xref:types-<type> with the corresponding pdoc link.
+     */
+    public String replaceTypeXrefs(String input) {
+        StringBuffer result = new StringBuffer();
+        Pattern pattern = Pattern.compile("xref:types-([^\\[]+)\\[[^\\]]+]");
+        Matcher match = pattern.matcher(input);
+        boolean found = false;
+        while (match.find()) {
+            found = true;
+            String typeString = match.group(1);
+            String formattedRes = "`ovirtsdk4.types." + underscoretoUpperCase(typeString) + "`";
+            match.appendReplacement(result, formattedRes);
+        }
+        match.appendTail(result);
+        return found ? result.toString() : input;
+    }
+
+    private String underscoretoUpperCase(String doc) {
+        String[] words = doc.split("_");
+        StringBuilder result = new StringBuilder();
+        for(String word : words) {
+            if (word.isEmpty()) {
+                continue;
+            }
+            result.append(Character.toUpperCase(word.charAt(0)));
+            result.append(word.substring(1));
+        }
+        return result.toString();
     }
 
     /**

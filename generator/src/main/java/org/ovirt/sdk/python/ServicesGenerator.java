@@ -32,7 +32,6 @@ import java.util.function.Predicate;
 import javax.inject.Inject;
 
 import org.ovirt.api.metamodel.concepts.Concept;
-import org.ovirt.api.metamodel.concepts.ListType;
 import org.ovirt.api.metamodel.concepts.Locator;
 import org.ovirt.api.metamodel.concepts.Method;
 import org.ovirt.api.metamodel.concepts.Model;
@@ -41,7 +40,6 @@ import org.ovirt.api.metamodel.concepts.NameParser;
 import org.ovirt.api.metamodel.concepts.Parameter;
 import org.ovirt.api.metamodel.concepts.PrimitiveType;
 import org.ovirt.api.metamodel.concepts.Service;
-import org.ovirt.api.metamodel.concepts.StructType;
 import org.ovirt.api.metamodel.concepts.Type;
 import org.ovirt.api.metamodel.tool.Names;
 import org.ovirt.api.metamodel.tool.SchemaNames;
@@ -633,12 +631,15 @@ public class ServicesGenerator implements PythonGenerator {
             if (!lines.isEmpty()) {
                 buffer.addLine("This method supports the following parameters:");
                 buffer.addLine();
-                lines.forEach(this::generateDocText);
-                buffer.addLine("`headers`:: Additional HTTP headers.");
+                lines.forEach(this::generateParamText);
+                buffer.addLine("`headers` \\n");
+                buffer.addLine("Additional HTTP headers.");
                 buffer.addLine();
-                buffer.addLine("`query`:: Additional URL query parameters.");
+                buffer.addLine("`query` \\n");
+                buffer.addLine("Additional URL query parameters.");
                 buffer.addLine();
-                buffer.addLine("`wait`:: If `True` wait for the response.");
+                buffer.addLine("`wait` \\n");
+                buffer.addLine("If `True` wait for the response.");
             }
         }
         buffer.endComment();
@@ -651,6 +652,14 @@ public class ServicesGenerator implements PythonGenerator {
     }
 
     private void generateDocText(Concept concept) {
+        String doc = concept.getDoc();
+        if (doc != null) {
+            doc = buffer.replaceServiceMethodsXrefs(doc);
+            doc = buffer.replaceServiceXrefs(doc);
+            doc = buffer.replaceTypeAttributeXrefs(doc);
+            doc = buffer.replaceTypeXrefs(doc);
+            concept.setDoc(doc);
+        }
         generateDocText(concept.getDoc());
     }
 
@@ -661,6 +670,17 @@ public class ServicesGenerator implements PythonGenerator {
         }
         if (!lines.isEmpty()) {
             lines.stream().filter(l -> !l.isEmpty()).forEach(buffer::addRawLine);
+            buffer.addLine();
+        }
+    }
+
+    private void generateParamText(String doc) {
+        List<String> lines = new ArrayList<>();
+        if (doc != null) {
+            Collections.addAll(lines, doc.split("\n"));
+        }
+        if (!lines.isEmpty()) {
+            lines.stream().filter(l -> !l.isEmpty()).forEach(buffer::prepParameterLine);
             buffer.addLine();
         }
     }

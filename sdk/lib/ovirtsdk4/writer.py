@@ -49,7 +49,7 @@ class Writer(object):
         """
         Converts the given boolean value to a string.
         """
-        if type(value) != bool:
+        if type(value) is not bool:
             raise TypeError('The \'value\' parameter must be a boolean')
         return 'true' if value else 'false'
 
@@ -65,7 +65,7 @@ class Writer(object):
         """
         Converts the given integer value to a string.
         """
-        if type(value) != int:
+        if type(value) is not int:
             raise TypeError('The \'value\' parameter must be an integer')
         return str(value)
 
@@ -81,7 +81,7 @@ class Writer(object):
         """
         Converts the given decimal value to a string.
         """
-        if type(value) != float:
+        if type(value) is not float:
             raise TypeError('The \'value\' parameter must be a decimal')
         return str(value)
 
@@ -97,7 +97,7 @@ class Writer(object):
         """
         Converts the given date value to a string.
         """
-        if type(value) != datetime.datetime:
+        if type(value) is not datetime.datetime:
             raise TypeError('The \'value\' parameter must be a date')
         return value.isoformat()
 
@@ -113,9 +113,11 @@ class Writer(object):
         """
         Registers a write method.
 
-        `typ`:: The type.
+        `typ` \n
+        The type.
 
-        `writer`:: The reference to the method that writes the XML
+        `writer` \n
+        The reference to the method that writes the XML
         object corresponding to the type.
         """
         cls._writers[typ] = writer
@@ -127,13 +129,16 @@ class Writer(object):
         the type. For example, if the type of the object is `Vm` then it
         will write the `vm` tag, with its contents.
 
-        `obj`:: The object to write.
+        `obj` \n
+        The object to write.
 
-        `target`:: The XML writer where the output will be written. If
+        `target` \n
+        The XML writer where the output will be written. If
         this parameter isn't given, or if the value is `None` the method
         will return a string containing the XML document.
 
-        `root`:: The name of the root tag of the generated XML document.
+        `root` \n
+        The name of the root tag of the generated XML document.
         This isn't needed when writing single objects, as the tag is
         calculated from the type of the object. For example, if the
         object isa virtual machine then the tag will be `vm`. But when
@@ -141,7 +146,8 @@ class Writer(object):
         be empty, or have different types of objects. In this case, for
         lists, if it isn't provided an exception will be raised.
 
-        `indent`:: Indicates if the output should be indented, for
+        `indent` \n
+        Indicates if the output should be indented, for
         easier reading by humans.
         """
         # If the target is `None` then create a temporary XML writer to
@@ -149,7 +155,7 @@ class Writer(object):
         cursor = None
         if target is None:
             cursor = xml.XmlWriter(None, indent)
-        elif type(target) == xml.XmlWriter:
+        elif type(target) is xml.XmlWriter:
             cursor = target
         else:
             raise Error(
@@ -160,7 +166,7 @@ class Writer(object):
         # Do the actual write, and make sure to always close the XML
         # writer if we created it:
         try:
-            if type(obj) == list:
+            if type(obj) is list:
                 # For lists we can't decide which tag to use, so the
                 # 'root' parameter is mandatory in this case:
                 if root is None:
